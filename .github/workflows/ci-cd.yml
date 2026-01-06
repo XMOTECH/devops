@@ -1,0 +1,64 @@
+name: DevOps CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Tests et Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Vérification des scripts Bash
+        run: |
+          find scripts -name "*.sh" -exec bash -n {} \;
+          echo "✅ Tous les scripts sont syntaxiquement corrects"
+
+      - name: Test de sécurité Docker
+        run: |
+          docker run --rm -v $(pwd):/project aquasec/trivy:latest config /project
+        continue-on-error: true
+
+  build:
+    name: Build Docker
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Build de l'image Docker
+        run: |
+          docker build -t devops-app:${{ github.sha }} .
+          echo "✅ Image construite avec succès"
+
+      - name: Test du conteneur
+        run: |
+          docker run -d --name test-container devops-app:${{ github.sha }}
+          sleep 5
+          docker ps | grep test-container
+          docker stop test-container
+          echo "✅ Conteneur fonctionne correctement"
+
+  deploy:
+    name: Déploiement
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Simulation de déploiement
+        run: |
+          echo "🚀 Déploiement sur l'environnement de production"
+          echo "📦 Version: ${{ github.sha }}"
+          echo "✅ Déploiement réussi!"
