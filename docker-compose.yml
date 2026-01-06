@@ -3,9 +3,11 @@ version: '3.8'
 services:
   api:
     build: .
-    container_name: devops-api
+    # container_name: devops-api  <-- REMOVED for scaling
+    deploy:
+      replicas: 3
     ports:
-      - "5000:5000"
+      - "5000-5005:5000"  # Allow ports range or let internal network handle it
     volumes:
       - ./logs:/logs
       - ./backups:/backups
@@ -42,6 +44,17 @@ services:
           /scripts/check_health.sh https://github.com
           sleep 60
         done
+    networks:
+      - devops-net
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus
+    container_name: devops-prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
     networks:
       - devops-net
     restart: unless-stopped

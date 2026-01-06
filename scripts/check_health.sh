@@ -15,5 +15,10 @@ if [ "$HTTP_CODE" = "200" ]; then
     exit 0
 else
     echo "[$TIMESTAMP] ❌ [ERREUR] $URL (Code: $HTTP_CODE)" | tee -a "$LOG_FILE"
+    
+    # Exercice 2: Alerte Email (Simulation)
+    echo "📧 [ALERT] Envoi d'email à admin@example.com : Service $URL est DOWN!" | tee -a "$LOG_FILE"
+    # mail -s "Alert: $URL Down" admin@example.com <<< "Service $URL responded with $HTTP_CODE"
+
     exit 1
 fi
